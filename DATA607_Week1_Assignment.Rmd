@@ -1,0 +1,176 @@
+---
+title: "DATA 607 Homework <br> Words used in Speeches for State Of The States"
+author: "*Bikram Barua*"
+date: "*8/25/2021*"
+output: html_document
+---
+
+
+# What America’s Governors Are Talking About
+##  The dataset contains every one-word phrase that was mentioned in at least 10 speeches and every two- or three-word phrase that was mentioned in at least five speeches by the State Governors.
+
+[State of the State data web link] (https://github.com/fivethirtyeight/data/tree/master/state-of-the-state)
+
+<br>
+
+#### The dataset consists of the following columns:
+##### *phrase* : one-, two- or three-word phrase
+##### *category* : thematic categories
+##### *d_speeches*: number of Democratic speeches
+##### *r_speeches*: number of Republican speeches
+##### *total*: total number of speeches
+##### *percent_of_d_speeches*: percent of the 23 Democratic speeches containing the phrase
+##### percent_of_r_speeches: percent of the 27 Republican speeches containing the phrase
+##### *chi2*: chi^2 statistics
+##### *pval*: p-value for chi^2 test
+<br>
+
+
+#### Load Libraries
+```{r, warning=FALSE}
+library(dplyr)
+library(sqldf)
+
+```
+
+
+```{r, warning=FALSE}
+## Read the Original data from GitHub link
+urlfile <- 'https://raw.githubusercontent.com/fivethirtyeight/data/master/state-of-the-state/words.csv'
+datain <- read.csv(urlfile)
+speech_data <- data.frame(datain)
+
+```
+<br>
+
+#### Rename the columns
+#### View sample data
+```{r, warning=FALSE}
+colnames(speech_data) <- c("Phrase","Category", "Democratic_Speeches", "Republican_Speeches", "Total_Speeches", "%_of_Dem_Speeches", "%_of_Rep_Speeches", "Chi^2","Probability_Measure")
+head(speech_data)
+
+
+```
+<br>
+
+#### Subset the data frame with Category and Total_Speeches columns
+#### Display the Categories, order by sum of speeches
+
+```{r, warning=FALSE}
+
+# Create Sub-set data
+speech_byCategory_subdata <- subset(speech_data, select = c("Category","Total_Speeches"))
+
+# Aggregate them
+speech_byCategory_aggregate_data <-  aggregate(speech_byCategory_subdata$Total_Speeches, by=list(speech_byCategory_subdata$Category), FUN=sum)
+#View(speech_byCategory_aggregate_data)
+
+# Order them
+speech_byCategory_order_aggregate_data <- speech_byCategory_aggregate_data[order(speech_byCategory_aggregate_data$x),] 
+colnames(speech_byCategory_order_aggregate_data) <- c("Category", "Total_Associated_Speeches")
+
+# Filter blank Catergory
+speech_byCategory_order_aggregate_data[!(!is.na(speech_byCategory_order_aggregate_data$Category) & speech_byCategory_order_aggregate_data$Category == ""), ]
+View(speech_byCategory_order_aggregate_data)
+
+
+```
+#### Of all the categories, leading topics are "Economy/Fiscal issues", "Education" and "Health Care".
+
+<br>
+
+#### Subset the data frame based on Words, Category used by Governors
+#### Display the Words, order by number of speeches by their Polical affiliation
+#### Top 10 Phrases used by Democratic Governors
+```{r, warning=FALSE}
+# Create Sub-set data
+Phrases_subdata <- subset(speech_data, select = c("Phrase", "Category","Democratic_Speeches", "Republican_Speeches"))
+
+library(sqldf)
+top_Dem_Phrases <- sqldf( "SELECT * FROM Phrases_subdata WHERE TRIM(Category) != '' ORDER BY Democratic_Speeches DESC LIMIT 10", row.names=FALSE)
+
+
+knitr::kable(top_Dem_Phrases, format="html")
+
+```
+<br>
+
+#### Top 10 Phrases used by Repulican Governors
+```{r}
+
+top_Rep_Phrases <- sqldf( "SELECT * FROM Phrases_subdata WHERE TRIM(Category) != '' ORDER BY Republican_Speeches DESC LIMIT 10", row.names=FALSE)
+
+knitr::kable(top_Rep_Phrases, format="html")
+```
+
+<br>
+
+#### Phrases which are used by Democrates only, not by Republicans
+```{r, warning=FALSE}
+Phrases_DemsOnly <- sqldf( "SELECT * FROM Phrases_subdata WHERE TRIM(Category) != '' AND Republican_Speeches == 0 ORDER BY Democratic_Speeches DESC LIMIT 15", row.names=FALSE)
+
+knitr::kable(Phrases_DemsOnly, format="html")
+```
+
+<br>
+
+#### Phrases which are used by Republicans only, not by Democrates
+```{r, warning=FALSE}
+Phrases_RepsOnly <- sqldf( "SELECT * FROM Phrases_subdata WHERE TRIM(Category) != '' AND Democratic_Speeches == 0 ORDER BY Republican_Speeches DESC LIMIT 15", row.names=FALSE)
+
+knitr::kable(Phrases_RepsOnly, format="html")
+```
+<br>
+
+#### Top Phrases Plot by Democratic Governors 
+```{r, warning=FALSE}
+library(ggplot2)
+library(ggbeeswarm)
+dem_plot <- ggplot(data = top_Dem_Phrases,
+  aes(y =Phrase , x = Democratic_Speeches)) +  geom_beeswarm()
+dem_plot
+
+```
+<br>
+
+#### Top Phrases Plot by Republican Governors
+```{r}
+rep_plot <- ggplot(data = top_Rep_Phrases,
+  aes(y =Phrase , x = Republican_Speeches)) +  geom_boxplot(notch=FALSE)
+rep_plot
+
+```
+<br>
+
+#### Let's see which Phrases are used by Governors from both sides in the top Category
+#### Added a new column Variance in the dataframe
+#### List the Phrases with least Variance
+
+```{r}
+
+# Create Sub-set data
+Category_subdata <- subset(speech_data, select = c("Phrase","Category","Democratic_Speeches", "Republican_Speeches"))
+Category_subdata$Variance <- abs(Category_subdata$Democratic_Speeches - Category_subdata$Republican_Speeches)
+
+Category_match_data <- sqldf( "SELECT * FROM Category_subdata WHERE TRIM(Category) != '' AND Variance == 0 AND Democratic_Speeches > 5", row.names=FALSE)
+
+knitr::kable(Category_match_data, format="html")
+
+```
+<br>
+
+#### List the Phrases with least Variance for "Economy/Fiscal Issues" used by the Governors
+
+```{r}
+TopCategory_match_data <- sqldf( "SELECT * FROM Category_subdata WHERE Category == 'economy/fiscal issues' AND Variance == 0", row.names=FALSE)
+
+knitr::kable(TopCategory_match_data, format="html")
+
+```
+<br>
+
+#### To conclude, based on the above analysis we found that Governors mostly talk about the economy/fiscal, education and mental health/substance abuse issues. The top ranking is economy/fiscal issues which tries to address the cost of doing business, impact on careers, employees and business development using tax relief, tax credit, cutting taxes in some areas and adding new taxes where possible.
+#### It is also noticed that Democratic Governors talk about minimum wage, gun violence and education need which Republicans never bring up in their speeches. 
+#### On the other hand, Republican Governors talk about doing business, state income and savings account which Democrates never discuss.
+
+
