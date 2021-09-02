@@ -1,0 +1,87 @@
+---
+title: "DATA_607_Lab2-3"
+author: "Bikram Barua"
+date: "9/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Lab 2-3
+#### Combining data from multiple sources
+```{r load-packages, message=FALSE, warning=FALSE}
+library(dplyr)
+library(sqldf)
+library(RODBC)
+library(DBI)
+library(odbc)
+
+library(downloader)
+library(htmlTable)
+```
+
+<br>
+
+#### Connect to the MySQL database
+#### Number of rows from MySQL
+```{r }
+mydb = dbConnect(odbc(), "MySQL")
+                
+mytb <- dbGetQuery(mydb, "select country, year, sex, child, adult,elderly  from tb")
+nrow(mytb)
+```
+<br>
+
+#### Filter data using Query 
+#### Group the data based on Country and Year
+```{r}
+library(sqldf)
+
+missing <- sqldf( "SELECT country, year, sex, child + adult + elderly as cases FROM mytb WHERE child > -1", row.names=TRUE)
+
+head(missing)
+missing_groupBy <- sqldf("select country, year,
+                         sum(cases) as ncases
+                    from missing 
+                   group by country, year
+                   ")
+
+head(missing_groupBy)
+```
+
+<br>
+
+#### Get data from csv file
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+url <- "https://raw.githubusercontent.com/baruab/msdsrepo/main/population.csv"
+
+download_file <- "population.csv" # name of the file on the local machine after download
+
+# the file will be downloaded to the working directory
+downloader::download(url, download_file)
+
+# read the population dataset into a dataframe
+
+population <- read.csv(download_file, header=TRUE, stringsAsFactors = FALSE)
+```
+
+
+#### Summarize population
+```{r}
+summary(population)
+```
+
+<br>
+
+#### Join two data sources
+```{r}
+
+final_df <- 
+        inner_join(missing_groupBy, population, by=c("country", "year")) %>%   
+        mutate(caseRatio = round( ((ncases/population)*100), digits = 4) )                     
+htmlTable(head(arrange(final_df, country, year), 20))
+```
+
