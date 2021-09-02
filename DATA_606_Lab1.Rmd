@@ -1,0 +1,143 @@
+---
+title: "DATA_606_Lab1"
+author: "Bikram Barua"
+date: "8/31/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## DATA 606 Lab
+#### Load the required libraries and the data
+```{r  load-packages, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(openintro)
+library(dplyr)
+
+data('arbuthnot', package='openintro')
+```
+
+#### Lets take a look at the data
+```{r}
+arbuthnot
+```
+
+
+#### Glimpse of the same data 
+```{r}
+glimpse(arbuthnot)
+```
+
+#### Let's explore the data
+#### Boys baptization information
+```{r}
+arbuthnot$boys
+```
+
+<br>
+
+#### **Exercise 1:**  Extract just the counts of girls baptized
+```{r}
+arbuthnot$girls
+```
+
+#### Total num of girls baptized over the years
+```{r}
+sum_girls <-  sum(arbuthnot$girls)
+sum_girls
+```
+
+#### Plot Girls baptization 
+```{r}
+ggplot(data = arbuthnot, aes(x = year, y = girls)) + 
+  geom_point()
+```
+
+#### Plot the same as Line graph
+```{r}
+ggplot(data = arbuthnot, aes(x = year, y = girls)) + 
+  geom_line()
+```
+
+<br>
+
+#### **Exercise 2:** How would you describe the apparent trend in the number of girls baptized over the years? 
+#### Draw a bar plot to represent the trend of girls baptized over the years 
+```{r}
+# Create Sub-set data
+girls_subdata <- subset(arbuthnot, select = c("year","girls"))
+p<-ggplot(data=girls_subdata, aes(x=year, y=girls)) +
+  geom_bar(stat="identity")
+p
+```
+
+#### From the above plot, it is clear that as year progressed, we have noticed increase in the count of girls being baptized.
+
+<br>
+
+#### Adding few new columns(total, boys to girls ratio, boys ratio) in the dataframe
+
+```{r}
+arbuthnot <- arbuthnot %>%
+  mutate(total = boys + girls)
+
+arbuthnot <- arbuthnot %>%
+  mutate(boy_to_girl_ratio = boys / girls)
+
+arbuthnot <- arbuthnot %>%
+  mutate(boy_ratio = boys / total)
+```
+
+<br>
+
+#### **Exercise 3:** Generate a plot of the proportion of boys born over time 
+#### Calculate boy proportion as percentage
+```{r}
+arbuthnot <- arbuthnot %>%
+  mutate(boy_percent = (boys / total) * 100 )
+b<-ggplot(data=arbuthnot, aes(x=year, y=boy_percent)) +
+  geom_bar(stat="identity")
+b
+```
+
+#### Boys percentage has always been higher than 50, which means more boys were baptized compared to girls over the years
+
+
+```{r}
+arbuthnot %>%
+  summarize(min = min(boys), max = max(boys))
+```
+
+<br>
+
+####  **Exercise 4:** What years are included in this data set? What are the dimensions of the data frame? What are the variable (column) names?
+#### All the years from the original arbuthnot dataset in included. The result data frame is of 1 x 2 dimension. The variable column names are min and max.
+
+<br>
+
+#### **Exercise 5:** How do these counts compare to Arbuthnot’s? Are they of a similar magnitude?
+#### These counts are same as Arbuthnot, with similar magnitude.
+
+<br>
+
+#### **Exercise 6:** Make a plot that displays the proportion of boys born over time. What do you see?
+```{r}
+b<-ggplot(data=arbuthnot, aes(x=year, y=boy_ratio)) +
+  geom_line()
+b
+```
+
+#### Based on the above graph of boys propotion compared to girls, it is clear that during the time period the boys population was higher compared to the girls.
+
+<br>
+
+#### **Exercise 7:** In what year did we see the most total number of births in the U.S.?
+```{r}
+sorted_total <- arrange(arbuthnot, desc(total))
+head(sorted_total, 1)
+```
+
+#### The year with the most total number of births in US was 1705
+
