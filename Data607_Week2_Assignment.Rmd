@@ -1,0 +1,129 @@
+---
+title: "DATA607_Week2_Assignment"
+author: "Bikram Barua"
+date: "9/2/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### DATA 607 Assignment - SQL and R
+
+##### Choose six popular movies, which your freinds, co-workers might have watched.
+##### Gather the ratings from your friends and try to analyse the result
+
+##### Used MySQL database as a system of record for the above purpose.
+##### Created few tables: movies, users and user_ratings to hold the relevant data
+
+##### Let's load the required libraries in R for data analysis
+```{r load-packages, message=FALSE, warning=FALSE}
+library(dplyr)
+library(sqldf)
+library(RODBC)
+library(DBI)
+library(odbc)
+
+library(downloader)
+library(htmlTable)
+```
+
+
+<br>
+
+#### Connect to the MySQL database
+#### List the movies
+```{r }
+mydb = dbConnect(odbc(), "MySQL")
+                
+movies_dt <- dbGetQuery(mydb, "select movie_name from movies")
+htmlTable(movies_dt)
+```
+
+<br>
+
+#### Join multiple tables to get data in one frame
+#### Filter the rows with missing rating data
+```{r}
+ratings_dt <- dbGetQuery(mydb, "select movie_name, username, userrole, rating
+               from user_ratings a
+                inner join users b on a.user_id = b.userid 
+                inner join movies c on a.movie_id = c.id
+               where rating > -1", row.names=FALSE)
+htmlTable(head(ratings_dt, 20))
+```
+
+<br>
+
+
+#### Group and sum the ratings by movie names 
+
+```{r}
+library(sqldf)
+
+ratings_groupByMovies <- sqldf( "SELECT movie_name, sum(rating)  
+                                 FROM ratings_dt
+                                   group by movie_name
+                                order by sum(rating) desc", row.names=TRUE)
+
+head(ratings_groupByMovies)
+```
+
+#### Highest rated movie by friends and co-workers
+```{r}
+ratings_groupByRole <- sqldf("SELECT movie_name, userrole, sum(rating)  
+                                 FROM ratings_dt
+                                   group by movie_name, userrole
+                                order by movie_name", row.names=TRUE)
+
+htmlTable(head(ratings_groupByRole, 2))
+```
+
+<br>
+
+#### Count the users who rated the movies in the survey based on their role
+```{r}
+countByUserRole<- sqldf("SELECT movie_name,  
+                  SUM(
+                      CASE WHEN userrole = 'Friend' THEN 1 ELSE 0 END
+                    ) As 'Num_Friends_Rated',
+                  SUM(
+                      CASE WHEN  userrole = 'Co-Worker' THEN 1 ELSE 0 END
+                    ) As 'Num_Co-Workers_Rated'
+                   FROM ratings_dt
+                group by movie_name")
+
+htmlTable(countByUserRole)
+```
+<br>
+
+#### The users were later asked a survey on various categories about the movies
+#### Get survey data from csv file
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+url <- "https://raw.githubusercontent.com/baruab/msdsrepo/main/Movie_user_ratings.csv"
+
+download_file <- "Movie_user_ratings.csv" # name of the file on the local machine after download
+
+# the file will be downloaded to the working directory
+downloader::download(url, download_file)
+
+# read the population dataset into a dataframe
+
+movie_user_survey <- read.csv(download_file, header=TRUE, stringsAsFactors = FALSE)
+head(movie_user_survey)
+```
+
+
+```{r}
+
+combined_df <- 
+        inner_join(ratings_dt, movie_user_survey, by=c("movie_name", "username"))             
+htmlTable(head(arrange(combined_df, movie_name, username), 15))
+
+```
+
+
+
+
