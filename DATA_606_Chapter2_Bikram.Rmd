@@ -1,0 +1,96 @@
+---
+title: "DATA_606_Chapter_2"
+author: "Bikram Barua"
+date: "9/11/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### DATA 606: Chapter2 Homework
+
+#### **Summarizing Data**  
+
+<br>
+
+##### **Stats scores. (2.33, p. 78)**  
+##### Below are the final exam scores of twenty introductory statistics students.
+57, 66, 69, 71, 72, 73, 74, 77, 78, 78, 79, 79, 81, 81, 82, 83, 83, 88, 89, 94  
+_Create a box plot of the distribution of these scores._
+
+
+```{r}
+exam_scores <- c(57, 66, 69, 71, 72, 73, 74, 77, 78, 78, 79, 79, 81, 81, 82, 83, 83, 88, 89, 94 )
+
+
+## generate number summary 
+exam_scores_summary <-  summary(exam_scores)
+
+boxplot(exam_scores, exam_scores_summary,
+main = "Box plot of the distribution of scores",
+xlab = "Student scores",
+ylab = "Summary Scores",
+boxwex=0.25,
+lwd = 1,
+col = c("orange","red", "blue", "green", "yellow"),
+border = "brown",
+horizontal = TRUE,
+notch = FALSE,
+na.rm = TRUE
+)
+```
+
+
+<br>
+
+### Mix-and-match (2.10, p 57)
+
+##### Histogram(a) has a normal and symmetric distribution with a unimodal characteristics of data, which means there is one distinct peak indicating the most frequent value in a histogram. Histogram(a) matches with Fig(2) box plot.
+##### Histogram(b) has a uniform dataset with approximately the same number of values in each group represented by a bar. Histogram(b) matches with Fig(3) box plot.
+##### Histogram(c) is a right-skewed dataset with the prominent peak to the left and with the tail extending to the right. Histogram(c) matches with Fig(1) box plot.
+
+\newpage
+
+### Distributions and appropriate statistics (2.16, p 59)
+
+##### a) In this use-case, housing price distribution in the country is right-skewed given the huge spread of house prices from $350,000 to $6,000,000, of which 50% of the houses are less than $450,000. Most of the data is towards the left of the distribution. Given the skewed nature of the data, median would best representative the typical observation. For skewed distributions or data sets, the interquartile range(IQR) is the best measure of variability of the distribution. IQR is least affected by extreme values because it focuses on the spread in the middle of the data set.
+
+##### b) The housing price dataset ranges from $300,000 to $1,200,000 with a symmetrical distribution with 50% houses below $600,000. Given it's normal and symmetric dataset, mean is the best represents the typical observation. The standard deviation is the square root of the variance, and it is a useful measure of variability as in this situation when the distribution is normal.  
+
+##### c) Given the alcholic drink consumption for a week depending on the age, the distribution of the data is left-skewed with based on the student age range in the college. Assuming, no one drinks under 21 and few drink excessively above 21, the peak of the data is on the right side of the graph. Median will be best representative of this observation given the skewness and wide range of variability. IQR would be better suited for this kind of variability of distribution in data.
+
+##### d) There is an obvious skewness in the salary distribution, given there are a very employees as high level executives with higher salaries. To represent the typical observation of salary, the use of median would be best suited. IQR is less affected by outliers and the value comes from the middle half of the data set. Therefore, the IQR gives a consistent measure of variability for skewed dataset and is the best measure for this example.
+
+\newpage
+
+
+### Heart transplants (2.26, p. 76)
+
+##### a) Based on the mosaic plot, the survival chances increased for the patients who got the transplant.Given the two group, treatment and control groups, the survival ratio of higher in the treatment group compared to the control group.
+
+##### b) The box plots suggests that the efficacy is higher in the treatment group.
+
+##### c) Proportion of patients died in the treatment group is 45/69 (0.65) is lower than the proportion of patients died in the control group which is 30/34 (0.88).
+
+##### d) In this particular study of this kind of treatment, randomization selection technique of the entire population might not be the best approach.
+
+i) The claims are tested for efficacy rates of Heart transplant treatment.
+
+ii) The paragraph below describes the set up for such approach, if we were to do it without using statistical
+software.  
+Fill in the blanks with a number or phrase, whichever is appropriate.  
+
+We write alive on _alive_ cards representing patients who were alive at the end of
+the study, and dead on _dead_ cards representing patients who were not. Then, we
+shuffle these cards and split them into two groups: one group of size _69_ representing
+treatment, and another group of size _34_ representing control. We calculate the
+difference between the proportion of dead cards in the treatment and control groups (treatment
+- control) and record this value. We repeat this 100 times to build a distribution centered at
+_deaths_. Lastly, we calculate the fraction of simulations where the simulated differences in
+proportions are _minimum_. If this fraction is low, we conclude that it is unlikely to have
+observed such an outcome by chance and that the null hypothesis should be rejected in favor of
+the alternative.
+
+iii) The fraction is low, so it means that the observed data is not an outcome by chance, which means the transplant program is highly effective.
