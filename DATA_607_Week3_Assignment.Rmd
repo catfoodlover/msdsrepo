@@ -1,0 +1,167 @@
+---
+title: "DATA_607_Week3_Assignment"
+author: "Bikram Barua"
+date: "9/8/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## DATA607 Week3 Assignment
+
+
+##### Let's load the required libraries in R for data analysis
+```{r load-packages, message=FALSE, warning=FALSE}
+library(dplyr)
+library(downloader)
+library(stringr)
+library(htmlTable)
+```
+
+<br>
+
+#### Get Majors data from csv file
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/college-majors/majors-list.csv"
+download_file <- "majors_list.csv" # name of the file on the local machine after download
+
+# the file will be downloaded to the working directory
+downloader::download(url, download_file)
+
+# read the dataset into a dataframe
+majors_list <- read.csv(download_file, header=TRUE, stringsAsFactors = FALSE)
+
+```
+
+#### 1) Identify Majors with 'DATA' OR 'STATISTICS'
+```{r}
+### keywords <- c("STATISTICS" , "DATA")  ## test
+keywords <- c( "DATA","STATISTICS")
+filtered_majors <- majors_list[str_detect(majors_list$Major, paste( keywords, collapse = '|')), ]
+htmlTable(filtered_majors)
+
+```
+
+<br>
+
+#### 2) Code to transforms the data format
+```{r}
+
+strdata <- "[1] 'bell pepper'  'bilberry'     'blackberry'   'blood orange' [5] 'blueberry' 'cantaloupe'   'chili pepper'   'cloudberry'  [9] 'elderberry'   'lime'         'lychee'       'mulberry' [13] 'olive'  'salal berry'"
+
+strdata1 <- str_replace_all(strdata, "([[0-9]])", "")
+strdata2 <-str_replace_all(strdata1, "\\[\\]", "")
+strdata3 <-str_replace_all(strdata2, "[[:punct:]]+", ",")
+strdata4 <-str_replace_all(strdata3, ",[[:space:]]+,", ",")
+strdata5 <-str_replace_all(strdata4, " ,", "")
+strdata5_end <-str_replace_all(strdata5, ",$", "")
+strdata6 <-str_replace_all(strdata5_end, ",", "\",\"")
+strdata7 <-str_replace_all(strdata6, "\'", "\"")
+strdata8 <- str_c( "c(\"" , strdata7 , "\")" )
+htmlTable(strdata8)
+
+```
+
+<br>
+
+#### 3) Describe, in words, what these expressions will match:
+##### _3.1) (.)\1\1_  
+.	Matches any character except line breaks (\n, and usually \r).  
+Back-references to previously matched subexpressions, grouped by (), \1 means the first match
+Another \1 means repeat the first match. Total repeat will be three times the matched character.
+
+This would match any of the following strings:
+"aaa"
+"bbb"
+"ccc"
+
+<br>
+
+##### _3.2) "(.)(.)\\2\\1"_  
+.	Matches any character except line breaks (\n, and usually \r).  
+There are two characters at the start  
+Back-references to previously matched subexpressions, grouped by (), \2 means the second match, followed by the first match
+
+This would match any of the following strings:
+"abba"
+"poop"
+"cddc"
+
+<br>
+
+##### _3.3) "(..)\\1"_  
+..	Matches any two characters, \\1 means repeating twice the match immediately
+
+Given fruits like  "salal berry", "banana","papaya", 
+_str_match(fruits,above_pattern)_ will return
+
+[1,] "alal" "al"
+[2,] "anan" "an"
+[3,] "papa" "pa"
+
+<br>
+
+##### _3.4) "(.).\\1.\\1"_  
+(.)	Match first character, . means the Second character can be any character  
+\\1 means repeating the match, .\\1 means repeat the first match with second character as wild character
+
+Given fruits like  "salal berry", "banana","papaya", 
+_str_match(fruits,above_pattern)_ will return
+
+[2,] "anana" "a" 
+[3,] "apaya" "a" 
+
+<br>
+
+##### _3.5) "(.)(.)(.).*\\3\\2\\1"  
+(.)(.)(.)	Match first three characters, Fourth onwards can be any number of characters, then followed by the third, then second and followed by the first character 
+Example:  "tomapotatomot"
+ 
+[Result] "tomapotatomot" "t"  "o"  "m" 
+
+<br>
+```{r}
+
+fruits <- c("bell pepper", "bilberry", "blackberry", "blood orange", "blueberry", "cantaloupe", "chili pepper", "cloudberry", "elderberry", "lime", "lychee", "mulberry", "olive", "salal berry", "banana","apapaya", "tomapotatomotot","church")
+
+#pattern <- "(.)\\1\\1"
+#pattern <- "(.)(.)\\2\\1"
+#pattern <- "(..)\\1"
+#pattern <- "(.).\\1.\\1"
+#pattern <- "(.)(.)(.).*\\3\\2\\1"
+#pattern <- "^(.).*\\1$"
+#pattern <- "(..).*\\1"
+pattern <- "([a-z]).*\\1.*\\1"
+#pattern <- "(.)\\..\\..\\.."
+#fruits %>% 
+str_match(fruits,pattern)
+```
+
+<br>
+
+#### 4) Construct regular expressions to match words that:  
+##### _4.1)Start and end with the same character._  
+pattern <- "^(.).*\\1$"  
+[16,] "apapaya"       "a"  
+[17,] "tomapotatomotot" "t"  
+ 
+<br>
+
+##### _4.2)Contain a repeated pair of letters (e.g. "church" contains "ch" repeated twice.)_  
+pattern <- "(..).*\\1"  
+[18,] "church"         "ch"  
+
+<br>
+
+##### _4.3)Contain one letter repeated in at least three places (e.g. "eleven" contains three "e"s.)_  
+pattern <- "([a-z]).*\\1.*\\1"
+
+
+
+
+
