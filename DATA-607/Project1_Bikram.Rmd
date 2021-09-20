@@ -1,0 +1,196 @@
+---
+title: "DATA_607_Project1"
+author: "Bikram Barua"
+date: "9/13/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## DATA 607 Project1
+
+
+##### Let's load the required libraries in R for data analysis
+```{r load-packages, message=FALSE, warning=FALSE}
+library(dplyr)
+library(downloader)
+library(stringr)
+library(htmlTable)
+library(tidyverse)
+library(janitor)
+
+library(sqldf)
+library(RODBC)
+library(DBI)
+library(odbc)
+```
+
+<br>
+##### Download and read the txt file to a dataframe object
+##### Filter the empty rows
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+
+getwd() # Path where the file will be downloaded
+url <- "https://raw.githubusercontent.com/baruab/msdsrepo/main/DATA-607/Project1_Data1.txt"
+download.file(url, "Project_Data.txt")
+
+
+data <- read.delim(file = "Project_Data.txt", header = FALSE, sep = "|", dec = ".")
+# Filter empty rows
+data1 <- subset( data,V2 != "") 
+
+# Extract Odd rows from dataframe
+odd_rows <- seq_len(nrow(data1)) %% 2
+# Drop even rows
+data_odd_rows <- data1[odd_rows == 1, ]
+
+# Now Drop odd rows, create a dataframe of even rows
+data_even_rows <- data1[odd_rows == 0, ]
+subset_even_rows <- subset(data_even_rows, select= c(V1, V2))
+
+# Rename column names
+colnames(subset_even_rows) <- c("State","Rating")
+colnames(data_odd_rows) <- c("Player_Num","Player_Name","Total_Pts","Round_1","Round_2", "Round_3", "Round_4", "Round_5", "Round_6", "Round_7")
+
+# Combine the two data frames
+data_rows <- cbind(data_odd_rows,subset_even_rows)
+
+# String manipulation on column to extract Player Rating
+rating_data <- str_extract_all(data_rows$Rating,boundary("word"), simplify = T)
+
+# Create a new column for Player's Pre-Rating and add it to the existing dataframe
+new_data_rows <- data_rows
+new_data_rows <- cbind(data_rows, Player_PreRating = rating_data[,3])
+
+
+```
+
+
+<br>
+
+##### Parse the Game Round information to isolate the opponent Player_Nums for further analysis
+
+```{r}
+
+round1_data <- str_extract_all(new_data_rows$Round_1,boundary("word"), simplify = T)
+round2_data <- str_extract_all(new_data_rows$Round_2,boundary("word"), simplify = T)
+round3_data <- str_extract_all(new_data_rows$Round_3,boundary("word"), simplify = T)
+round4_data <- str_extract_all(new_data_rows$Round_4,boundary("word"), simplify = T)
+round5_data <- str_extract_all(new_data_rows$Round_5,boundary("word"), simplify = T)
+round6_data <- str_extract_all(new_data_rows$Round_6,boundary("word"), simplify = T)
+round7_data <- str_extract_all(new_data_rows$Round_7,boundary("word"), simplify = T)
+
+new_data_rows <- cbind(new_data_rows, Round1_Opponent = round1_data[,2], Round2_Opponent = round2_data[,2], 
+        Round3_Opponent = round3_data[,2], Round4_Opponent = round4_data[,2], Round5_Opponent = round5_data[,2],
+        Round6_Opponent = round6_data[,2], Round7_Opponent = round7_data[,2])
+
+subset_db_rows <- subset(new_data_rows, select= c(Player_Num, Player_Name, Total_Pts, Player_PreRating, Round1_Opponent,Round2_Opponent,Round3_Opponent,Round4_Opponent,Round5_Opponent,Round6_Opponent,Round7_Opponent))
+
+## Substitute blank Opponent Player_Num to 99999
+subset_db_rows[subset_db_rows == ""] <- 99999
+
+db_rows <- subset_db_rows
+
+## Filter the Rating digits, removing the P?? numbers
+PreRating <- str_extract_all(subset_db_rows$Player_PreRating, "^[:digit:]+")
+
+PreRating.df <- as.data.frame(t(PreRating))
+T_PreRating <- t(PreRating.df)
+ 
+## Add a new column with just Pre_Rating
+db_rows$Pre_Rating <- T_PreRating    
+
+## First coerce the data.frame to all-character
+db_rows_coerce = data.frame(lapply(db_rows, as.character), stringsAsFactors=FALSE)
+
+
+```
+
+
+<br>
+
+##### Create dataframes to help compute 'Average Pre Chess Rating of Opponents'
+##### Convert the character value in the dataframe to Integer to help compute the mean
+```{r}
+player_opponents.df <- subset(db_rows_coerce, select = c(Player_Num, Pre_Rating, Round1_Opponent, Round2_Opponent, Round3_Opponent, Round4_Opponent, Round5_Opponent, Round6_Opponent, Round7_Opponent) )
+
+data1 <- player_opponents.df
+
+dat <- as.data.frame(sapply(data1, as.numeric)) #<- sapply is here
+
+dat_num <- dat
+
+```
+
+##### Loop thru the dataframe to get the Opponent Rating and calculate the Mean_Opponent_Rating
+##### Bypass the byes, forfeit in mean calculation
+##### Combine the dataset with the original dataframe with Player Name and other information
+```{r}
+for(i in 1:nrow(dat_num)) {       # for-loop over rows
+   count <- 0
+   sum <- 0
+   j <- 3
+   for(j in 3:ncol(dat_num)) {  
+      dat_num[i, j] <- dat_num[dat_num[i, j], 2] # Replace Opponent player_num with their Pre_Rating
+      if (is.na(dat_num[i,j]) == FALSE) {
+        count <- count + 1
+        sum <- sum + dat_num[i,j]
+      }
+   }
+   dat_num[i,10] <-   format(round(sum/count, 2), nsmall = 2) 
+   dat_num[i,11] <- count
+}
+
+## Combine the original dataframe, map with the ratings
+combined_df <- cbind(data_rows, dat_num[ ,2], dat_num[ ,10], dat_num[ ,11])              
+colnames(combined_df) <- c("Player_Num","Player_Name", "Total_Pts",  "Round_1","Round_2", "Round_3", "Round_4", "Round_5", "Round_6", "Round_7", "Temp","State","All Rate Info", "Pre_Rating","Opponent_Mean_Rating", "Num_Games_Played")
+
+result_df <- subset(combined_df, select= c(Player_Num, Player_Name, State, Total_Pts, Pre_Rating, Opponent_Mean_Rating), row_number=FALSE)
+htmlTable(result_df)
+```
+
+
+##### Create Player dataset who played all the scheduled games
+##### Create Player dataset who had atleast one unplayed game
+```{r}
+
+all_games_played_df <- subset(combined_df, select= c(Player_Num, Player_Name, Total_Pts, Pre_Rating, Opponent_Mean_Rating,Num_Games_Played), row_number=FALSE)
+
+## Players who played 7 Rounds
+max_games_played_df <- filter(all_games_played_df, all_games_played_df$Num_Games_Played == 7)
+htmlTable(max_games_played_df)
+
+## Players who had one or more unplayed games 
+games_unplayed_df <- filter(all_games_played_df, all_games_played_df$Num_Games_Played < 7)
+htmlTable(games_unplayed_df)
+
+
+
+```
+
+##### Sort the Players by their Pre-Ratings, Points
+
+```{r}
+# Sort by Points and Pre_Ratings
+sorted_df <- result_df[order(result_df$Total_Pts, result_df$Pre_Rating, decreasing = TRUE),]
+
+htmlTable(sorted_df, rnames = FALSE)
+
+```
+
+#### **GARY HUA scored the most points relative to his expected result**
+
+
+##### Create the CSV file
+```{r}
+## Create the .CSV file from the dataframe
+getwd() # Path where the file will be downloaded
+write.csv(result_df,"Chess_Project_Result.csv", row.names = FALSE)
+
+
+```
+
+
