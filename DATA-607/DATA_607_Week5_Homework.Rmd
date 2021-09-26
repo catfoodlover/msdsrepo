@@ -1,0 +1,162 @@
+---
+title: "DATA_607_Week5_Homework"
+author: "Bikram Barua"
+date: "9/23/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## DATA 607 Week5 Homework
+
+
+##### Let's load the required libraries in R for data analysis
+```{r load-packages, message=FALSE, warning=FALSE}
+library(dplyr)
+library(downloader)
+library(stringr)
+library(htmlTable)
+library(tidyverse)
+library(flextable)
+```
+
+<br>
+
+##### Download and read the CSV file to a dataframe object  
+##### View the data  
+
+```{r message=FALSE, echo=TRUE, warning=FALSE}
+# Import the data from the csv file
+vaccination_data <- read.csv("https://raw.githubusercontent.com/baruab/msdsrepo/main/DATA-607/israeli_vaccination_data.csv")
+
+vaccination_data  %>% regulartable() %>% autofit()  
+```
+
+##### Seperate the data by even and odd rows  
+
+```{r message=FALSE, echo=TRUE, warning=FALSE}
+# Extract Odd rows from dataframe
+odd_rows <- seq_len(nrow(vaccination_data)) %% 2
+# Drop even rows
+data_odd_rows <- vaccination_data[odd_rows == 1, ]
+
+# Now Drop odd rows, create a dataframe of even rows
+data_even_rows <- vaccination_data[odd_rows == 0, ]
+
+subset_even_rows <- subset(data_even_rows, select= c(2, 3))
+
+```
+
+##### Rename the columns
+##### Add new columns, converting the existing ones from character to numeric for calculations
+##### View Population as numeric
+```{r message=FALSE, echo=TRUE, warning=FALSE}
+# Rename even row column names
+colnames(subset_even_rows) <- c("%_Not_Vax","%_Fully_Vax")
+
+
+# Add numeric columns for the Vaccination percentage values
+num_subset_even_rows <- subset_even_rows %>% 
+  mutate(Percent_NotVax =  str_extract_all(subset_even_rows$`%_Not_Vax`, "^[:digit:]+.[:digit:]+")) %>%
+  unnest() %>%
+  mutate(Percent_NotVax = as.numeric(Percent_NotVax)) %>%
+  
+  mutate(Percent_FullyVax =  str_extract_all(subset_even_rows$`%_Fully_Vax`, "^[:digit:]+.[:digit:]+")) %>%
+  unnest() %>%
+  mutate(Percent_FullyVax = as.numeric(Percent_FullyVax))
+
+
+# Rename odd row column names
+colnames(data_odd_rows) <- c("Age" ,"Population_Not_Vax","Population_Fully_Vax", "Severe_Not_Vax_Cases", "Severe_Fully_Vax_Cases", "Efficacy_vs_Severe_Disease")
+
+
+# Add numeric columns for the Vaccination population values
+num_data_odd_rows <- data_odd_rows %>% 
+  mutate(Population_NotVax = as.numeric(gsub(",","", data_odd_rows$Population_Not_Vax ))) %>%
+  unnest()  %>% 
+  mutate(Population_FullyVax = as.numeric(gsub(",","", data_odd_rows$Population_Fully_Vax ))) %>%
+  unnest() %>%
+
+# Compute Efficacy vs Severe Disease     format(round(sum/count, 2), nsmall = 2) 
+  mutate(Efficacy_vs_Severe_Disease = format(round(1 - ( data_odd_rows$Severe_Fully_Vax_Cases /       data_odd_rows$Severe_Not_Vax_Cases),2), nsmall = 2 )) %>%
+  unnest()
+
+num_data_odd_rows$Population_NotVax
+num_data_odd_rows$Population_FullyVax  
+
+```
+
+##### Combine the datasets with numeric columns for calculations
+##### Add a Total row, sum the relevant columns
+
+```{r message=FALSE, echo=TRUE, warning=FALSE}
+# Combine the two data frames with the new numeric columns created
+data_rows <- cbind(subset(num_data_odd_rows, select = c(1,4,5,6,7,8)), subset(num_subset_even_rows, select= c(3, 4)))
+
+# Add new columns totalling the percentage and population by row 
+new_data_rows <- mutate(data_rows, total_percentage = data_rows$Percent_NotVax + data_rows$Percent_FullyVax ) %>%
+                 mutate(data_rows, total_population = data_rows$Population_NotVax + data_rows$Population_FullyVax )  
+
+new_data_rows[nrow(new_data_rows)+1, ] <- c('Total', sum(new_data_rows$Severe_Not_Vax_Cases), sum(new_data_rows$Severe_Fully_Vax_Cases),NA, sum(new_data_rows$Population_NotVax), sum(new_data_rows$Population_FullyVax),NA, NA, NA,  sum(new_data_rows$total_population) )
+
+new_data_rows  %>% regulartable() %>% autofit()  
+
+```
+
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+# Identify numeric columns in the dataframe
+#numCols <- which(unlist(lapply(new_data_rows, is.numeric)))
+#new_data_rows[(nrow(new_data_rows) + 1), numCols] <- colSums(new_data_rows[, numCols], na.rm=TRUE)
+```
+
+##### Display the final dataset
+
+```{r message=FALSE, echo=TRUE, warning=FALSE}
+# Short Column names
+colnames(new_data_rows) <- c("Age" ,"NotVax_Cases","FullyVax_Cases", "Effi_Ratio", "NotVax_Popu", "FullyVax_Popu", "NotVax_Perc", "FullyVax_Perc", "Total_Perc", "Total_Popu")
+
+col_order <- c("Age", "NotVax_Popu", "FullyVax_Popu",  "Total_Popu", "NotVax_Perc", "FullyVax_Perc", "Total_Perc","NotVax_Cases","FullyVax_Cases", "Effi_Ratio")
+final_data_rows <- new_data_rows[, col_order]
+
+htmlTable(final_data_rows)
+```
+
+#### According to Wikipedia.org, Israel has an estimated population of 9.4 million.
+Ref: https://en.wikipedia.org/wiki/Israel
+
+
+#### Please note: Based on the news article below, Israelis over 16 years are only eligible for Vaccination 
+Ref: https://www.usnews.com/news/health-news/articles/2021-02-04/all-israelis-over-16-are-eligible-for-coronavirus-vaccine 
+Age Structure Ref: https://www.statista.com/statistics/526596/age-structure-in-israel/ 
+
+<br>
+
+#### The total population in this study is approx 6.9 million, as per calculation in the Total row. Also note that the total percentage in each category is less than 100%. <b>My assumption is the use case did not include the population of 16 years and under in this study.</b> Based on the age structure reference link above, approx 27% of Israel's population is under 15, which if included adds up to the estimated 9.4 million total population.
+
+#### 1) Based on the information provided in this use-case, we do not have enough details to calculate the total population of Israel. The first age range should have been '16 - 50' instead of '<50'. This total population only represents only people greater than 16 yrs.
+<br>
+
+```{r message=FALSE, echo=TRUE, warning=FALSE}
+efficacy_data_rows <- subset(final_data_rows, select= c("Age","NotVax_Popu", "FullyVax_Popu",  "Total_Popu",
+                                "NotVax_Cases","FullyVax_Cases", "Effi_Ratio" ))
+
+# Add Efficacy ratio values
+more_efficacy_ratio <- efficacy_data_rows %>% 
+  mutate(Severecase_rate_NotVax = format(round( as.numeric(efficacy_data_rows$NotVax_Cases) / as.numeric(efficacy_data_rows$NotVax_Popu),8), nsmall =8 ))  %>%
+  unnest() %>% 
+  mutate( Severecase_rate_FullVax = format(round( as.numeric(efficacy_data_rows$FullyVax_Cases) / as.numeric(efficacy_data_rows$FullyVax_Popu),8), nsmall = 8 )) %>%
+  unnest()
+
+htmlTable(more_efficacy_ratio)
+```
+
+#### 2) Above are the calculated values for Efficacy vs Disease, one of the value is positive and other is negative. It tells that the Severe cases for fully vaccinated people was higher in age group greater than 50. Clearly the cases were much higher in >50 age group. Also I have calculated the rate of 'Number of Severe cases' by their respective population. The ratio is fairly low indicating high efficacy rate of the vaccine is general.
+
+<br>
+
+#### 3) There is no comparison with the efficacy vs severe disease with the rate of severe cases in individuals. 
