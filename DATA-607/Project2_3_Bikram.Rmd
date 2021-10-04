@@ -1,0 +1,82 @@
+---
+title: "Project2_3_Bikram"
+author: "Bikram Barua"
+date: "10/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Project 2_3 (Dataset of stock market in India)
+Original Data Reference: <https://www.kaggle.com/souravroy1/stock-market-data/download>
+
+
+##### Let's load the required libraries in R for data analysis
+```{r load-packages, message=FALSE, warning=FALSE}
+library(dplyr)
+library(downloader)
+library(stringr)
+library(htmlTable)
+library(tidyverse)
+library(reshape2)
+
+```
+
+<br>
+
+##### Download and read the CSV file to a dataframe object  
+##### View the data  
+
+```{r message=FALSE, echo=TRUE, warning=FALSE}
+
+# Import the data from the csv file
+
+stock_market_data <- read.csv("https://raw.githubusercontent.com/baruab/msdsrepo/main/DATA-607/Stock_Market_data.csv", stringsAsFactors = FALSE)
+
+head(stock_market_data, 5) 
+
+```
+
+#### Filter the rows with non-standard Sector values
+#### Clean the data, remove # values 
+
+```{r}
+
+
+stock_market_df <- stock_market_data%>% filter(str_detect(Sector, "^[A-Z]"))  %>%  select(Share,Sector ,Last.Traded.Price, 
+ Percentage.Change,High.Price, Low.Price,Yearly.Gainner,PeRatio,New.Pe, W52_High, MarketCap, DividendYield ) %>% arrange(Sector)
+
+stock_market_df <- sapply(stock_market_df,function(x) {x <- gsub("#N/A" ,"", gsub("#DIV/0!","",x)) })
+
+head(stock_market_df, 5)
+
+```
+
+#### Statistical value by Sector
+#### Clean the data
+#### Sorted by number of companies per Sector with their mean Last traded price 
+```{r warning=FALSE, message=FALSE}
+stock_market_df <-  as.data.frame(stock_market_df)
+
+stock_market_df$Last.Traded.Price <- as.numeric(stock_market_df$Last.Traded.Price)
+
+summarize_Sector <- stock_market_df %>% group_by( Sector) %>% summarise(Mean_Last_Traded_Price = round(mean(Last.Traded.Price, na.rm=TRUE), 2), Num_Companies = n()) %>% filter(!is.na(mean)) %>% arrange(desc(Num_Companies))
+
+head(summarize_Sector)
+```
+#### Sort the companies by their Market Cap, display their Yearly Gain %, PE Ratio and Divident Yield
+#### Display top 20 companies
+
+```{r warning=FALSE, message=FALSE}
+
+stock_market_df$MarketCap <- as.numeric(stock_market_df$MarketCap)
+
+summarize_MarketCap <- head( stock_market_df %>% filter(!is.na(MarketCap)) %>% arrange(desc(MarketCap)), 20) %>% select(Share, Yearly.Gainner,PeRatio,MarketCap, DividendYield )
+
+htmlTable(summarize_MarketCap)
+
+
+```
+
