@@ -1,0 +1,147 @@
+---
+title: "DATA_607_Project2_1"
+author: "Bikram Barua"
+date: "9/28/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## DATA 607 Project2_1 Homework
+##### Global annual GDP growth numbers by country from 1960 - 2020
+Data Reference Link: [data.worldbank.org](https://data.worldbank.org/indicator/NY.GDP.MKTP.KD.ZG)
+
+
+##### Let's load the required libraries in R for data analysis
+```{r load-packages, message=FALSE, warning=FALSE}
+library(dplyr)
+library(downloader)
+library(stringr)
+library(htmlTable)
+library(tidyverse)
+
+```
+
+<br>
+
+##### Download and read the CSV file to a dataframe object  
+##### View the data  
+
+```{r message=FALSE, echo=TRUE, warning=FALSE}
+
+# Import the data from the csv file
+gdp_data <- read.csv("https://raw.githubusercontent.com/baruab/msdsrepo/main/DATA-607/GDP_by_country.csv", stringsAsFactors = FALSE)
+
+head(gdp_data, 5)  
+
+```
+
+##### Remove unwanted columns
+
+```{r}
+gdp_data2  <- gdp_data %>% mutate_if(is.numeric, round, digits=2)
+subset_gdp_data <- gdp_data2 %>% select(-'Indicator.Name',-'Indicator.Code')
+
+```
+
+##### Remove the letter 'X' from the column names
+##### Rename the first column of the data frame
+
+```{r}
+names(subset_gdp_data) <- gsub("X", "", names(subset_gdp_data))
+
+subset_gdp_data <-  subset_gdp_data %>% {colnames(.)[1] = "country"; .}
+
+```
+
+
+##### Load latitude/longitude data
+
+```{r}
+
+# Import the country latitude/longitude data from the csv file
+country_latlng_data <- read.csv("https://raw.githubusercontent.com/baruab/msdsrepo/main/DATA-607/country_latitude_longitude.csv")
+head(country_latlng_data)
+
+```
+
+##### Select relevant columns from the country geo dataset
+##### Re-order the columns in the dataframe
+
+```{r}
+
+subset_latlng_data <- subset(country_latlng_data, select= c('latitude', 'longitude', 'country'))
+
+col_order <- c("country","latitude","longitude")
+new_latlng_data <- subset_latlng_data[, col_order]
+
+```
+
+##### Join the latitude/longitude with GDP columns in the dataframe
+
+```{r}
+joined_df <- left_join( new_latlng_data,subset_gdp_data, by ="country")
+
+
+```
+#### Selecting few columns to work with
+#### Add the GDP for last 5 years, create a new column with the total GDP
+#### Filter out the countries which have not reported their GDP every year
+
+```{r}
+### Selecting few columns
+
+sel_df <-  select(joined_df, country,'2016', '2017', '2018', '2019' ,'2020', latitude, longitude) %>%
+  mutate(total =  joined_df$'2016' + joined_df$'2017'+  joined_df$'2018'+ joined_df$'2019' + joined_df$'2020') %>% filter(!is.na(total))
+
+
+```
+
+#### Sort the countries by their total GDP
+#### Display the top 10 performing countries from (2016 - 2020)
+```{r}
+top_10_countries <-  sel_df %>% arrange(desc(total)) %>% head(10) 
+knitr::kable(top_10_countries, "html")
+```
+
+#### Plot bar graph for the top countries
+
+```{r}
+# Basic histogram
+
+ggplot(top_10_countries, aes(x=country, y=total)) + geom_bar(stat="identity") +
+  scale_x_discrete(guide = guide_axis(angle = 90)) + NULL
+```
+
+#### Mark the top countries on the world map
+
+```{r warning=FALSE, message=FALSE}
+
+library("rnaturalearth")
+library("rnaturalearthdata")
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+  
+  ggplot(data = world) +
+    geom_sf() +
+  geom_point(data = top_10_countries, aes(x = longitude, y = latitude), color = "#e60000") +
+  geom_text(data= top_10_countries,aes(x=longitude, y=latitude, label=country),
+    color = "darkblue", fontface = "bold", size = 3, check_overlap = TRUE)  +
+  scale_fill_manual(values = c("#CCCCCC","#e60000")) +
+  labs(title = 'Countries with highest GDP') +
+  theme(text = element_text(family = "Arial", color = "#FFFFFF")
+        ,panel.background = element_rect(fill = "#FFFFF4")
+        ,plot.background = element_rect(fill = "#FFFFF4")
+        ,panel.grid = element_blank()
+        ,plot.title = element_text(size = 30)
+        ,plot.subtitle = element_text(size = 10)
+        ,axis.text = element_blank()
+        ,axis.title = element_blank()
+        ,axis.ticks = element_blank()
+        ,legend.position = "none"
+        )
+```
+
