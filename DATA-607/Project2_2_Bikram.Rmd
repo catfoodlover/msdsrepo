@@ -1,0 +1,162 @@
+---
+title: "DATA_607_Project2_2"
+author: "Bikram Barua"
+date: "9/30/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Project 2 (Global Child Mortality Rates data)
+This is a dataset from Unicef with mortality rates under 5 years across different countries from 1950 to 2015.
+Data Reference: <https://raw.githubusercontent.com/baruab/msdsrepo/main/DATA-607/unicef-u5mr.csv>
+
+
+##### Let's load the required libraries in R for data analysis
+```{r load-packages, message=FALSE, warning=FALSE}
+library(dplyr)
+library(downloader)
+library(stringr)
+library(htmlTable)
+library(tidyverse)
+library(reshape2)
+```
+
+<br>
+
+##### Download and read the CSV file to a dataframe object  
+##### View the data  
+
+```{r message=FALSE, echo=TRUE, warning=FALSE}
+
+# Import the data from the csv file
+unicef_data <- read.csv("https://raw.githubusercontent.com/baruab/msdsrepo/main/DATA-607/unicef-u5mr.csv", stringsAsFactors = FALSE)
+
+head(unicef_data, 5) 
+
+```
+
+
+##### Clean up the column names
+
+```{r}
+names(unicef_data) <- gsub("U5MR.", "", names(unicef_data))
+
+```
+
+
+##### Remove the first column of the data frame
+
+```{r}
+subset_unicef_data <- select( unicef_data, -1)
+
+# Assign row averages to new variable named row_mean
+subset_unicef_data$row_mean <- round(rowMeans(subset_unicef_data, na.rm=TRUE),2)
+
+# Add the first column back to the dataframe 
+bind_unicef_data <- cbind(select(unicef_data, 1), subset_unicef_data)
+
+# Sort the dataframe by the mean of the mortality rate 
+highest_child_mortality <-  arrange(bind_unicef_data, desc(row_mean)) %>% head(5) 
+
+# Display the countries with highest rates
+htmlTable( select( highest_child_mortality, c('CountryName', 'row_mean')))
+
+```
+
+#### Lets do some analysis on the top 5 countries, to find any relationship.
+#### Subset last 5 yrs from the dataset for the top 5 countries from (2011 - 2015)
+#### Transform the dataset from wide format to long format
+```{r warning=FALSE, message=FALSE}
+subset_child_mortality <-  select( highest_child_mortality, c('CountryName', '2011','2012','2013', '2014','2015'))
+
+subset_child_mortality1 <- subset_child_mortality %>%
+    gather("year", "cases", "2011":"2012":"2013":"2014":"2015")
+
+# Plot the country line graph by the year to identify trend 
+ggplot(subset_child_mortality1, aes(CountryName,cases, group=year)) + 
+   geom_line(aes(color=year))+
+ geom_point(aes(shape=year))
+
+```
+The mortality rates consistently decreased from 2011 - 2015 for all the countries.
+
+<br>
+
+#### For the last 5 years, find mean, standard deviation, variance of the cases
+
+```{r warning=FALSE, message=FALSE}
+mean_child_mortality <- subset_child_mortality1 %>% group_by(CountryName) %>%  summarise(avg_deaths = mean(cases, na.rm=TRUE)) 
+
+sd_child_mortality <- subset_child_mortality1 %>% group_by(CountryName) %>%  summarise(sd_deaths = sd(cases, na.rm=TRUE))
+
+min_child_mortality <- subset_child_mortality1 %>% group_by(CountryName) %>%  summarise(min_deaths = min(cases, na.rm=TRUE))
+
+max_child_mortality <- subset_child_mortality1 %>% group_by(CountryName) %>%  summarise(max_deaths = max(cases, na.rm=TRUE))
+
+variance_child_mortality <- subset_child_mortality1 %>% group_by(CountryName) %>%  summarise(variance_deaths = var(cases, na.rm=TRUE))
+
+child_mortality_stats <- mean_child_mortality %>% inner_join(sd_child_mortality, by = 'CountryName') %>% inner_join(min_child_mortality, by = 'CountryName') %>% inner_join(max_child_mortality, by = 'CountryName') %>% inner_join(variance_child_mortality, by = 'CountryName') 
+
+arrange(child_mortality_stats, desc(avg_deaths)) 
+  
+
+```
+
+
+The trend of different statistical values is consistent across countries.
+
+```{r warning=FALSE, message=FALSE}
+child_mortality_stats1 <- child_mortality_stats 
+
+library(reshape2)
+#melt data frame into long format
+df <- melt(child_mortality_stats1 ,  id.vars = 'CountryName')
+
+# Everything on the same plot
+ggplot(df, aes(CountryName,value, col=variable)) + 
+  geom_line(aes(color=variable))+
+  geom_point()  
+
+```
+
+
+#### Load another dataset with Continent/Country mapping data 
+
+```{r}
+
+# Import the data from the csv file
+continent_data <- read.csv("https://pkgstore.datahub.io/JohnSnowLabs/country-and-continent-codes-list/country-and-continent-codes-list-csv_csv/data/b7876b7f496677669644f3d1069d3121/country-and-continent-codes-list-csv_csv.csv", stringsAsFactors = FALSE)
+
+head(continent_data, 5)
+
+continent_data$Country_Name <- gsub(",.*$", "", continent_data$Country_Name)
+
+continent_data = continent_data %>% dplyr::mutate(CountryName = gsub(",.*$", "", continent_data$Country_Name))
+
+```
+
+#### Join the two datasets
+#### Group the data by Continent, summarize and sort them by their cumulative totals
+
+```{r}
+joined_df <- left_join( continent_data,bind_unicef_data, by = "CountryName")
+
+sum_cont_df <- joined_df  %>% select( Continent_Name, Continent_Code, row_mean) %>% group_by( Continent_Code)  %>% mutate(sum_mean = sum(row_mean, na.rm=TRUE)) %>% summarize(sum_mean = max(sum_mean)) %>% arrange(desc(sum_mean))
+
+
+htmlTable(sum_cont_df)
+```
+
+
+#### Join the top 5 counties dataset with the continent dataset
+
+```{r}
+top_cont_country_df <- inner_join( continent_data,subset_child_mortality, by = "CountryName")
+top_cont_country_df <- top_cont_country_df  %>% select( Continent_Name, Continent_Code, CountryName) 
+htmlTable(top_cont_country_df)
+```
+
+This is to concluded the Africa has the highest cases of child mortality, with all the countries with high cases are in Africa. 
