@@ -1,59 +1,23 @@
 ﻿{
   "books": {
     "book": [
-      {
-        "id": "1",
-        "title": "Digital Transformation",
-        "author": [
-          {
-            "name": "Thomas Siebel"
-          }
-        ],
-        "attribute": [
-          {
-            "desc": "The combination of four disruptive technologies: cloud computing, big data, the internet of things, and artificial intelligence is dramatically changing the way businesses compete."
-          },
-          {
-            "desc": "The competitive landscape for governments is also changing."
-          }
-        ]
+      {        
+        "Title": "Digital Transformation",
+        "Authors": ["Thomas M. Siebel"],
+        "ISBN": "978-1-948122",
+        "Publisher": "Rosetta Books"
       },
       {
-        "id": "2",
-        "title": "Computer Networks and Internet",
-        "author": [
-          {
-            "name": "Douglas E. Comer"
-          }
-        ],
-        "attribute": [
-          {
-            "desc": "Refresher in key concepts of computer networking and data communication."
-          },
-          {
-            "desc": "The competitive landscape for governments is also changing."
-          }
-        ]
+        "Title": "The Unix Programming Environment",
+	"Authors": ["Brian W. Kernighan", "Rob Pike"],
+	"ISBN": "0-13-937681-X",
+        "Publisher": "Prentice Hall"
       },
       {
-        "id": "3",
-        "title": "Ace The Data Science Interview",
-        "author": [
-          {
-            "name": "Kevin Huo"
-          },
-          {
-            "name": "Nick Singh"
-          }
-        ],
-        "attribute": [
-          {
-            "desc": "Covers the underlying math useful for data science."
-          },
-          {
-            "desc": "Amazing tips on portfolio projects."
-          }
-        ]
+        "Title": "Design Patterns",
+	"Authors": ["Eric Gamma", "Richard Helm", "Ralph Johnson", "John Vlissides"],
+	"ISBN": "0-201-63361-2",
+        "Publisher": "Addison-Wesley"       
       }
     ]
   }
