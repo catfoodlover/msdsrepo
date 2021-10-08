@@ -1,0 +1,71 @@
+CREATE TABLE `age_group` (
+  `age_group_id` int NOT NULL,
+  `age_group_name` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`age_group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+
+CREATE TABLE `education_degree` (
+  `Degree_Id` int NOT NULL,
+  `Degree_Namel` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`Degree_Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+CREATE TABLE `participant_info` (
+  `Participant_Id` int NOT NULL,
+  `Gender` varchar(45) DEFAULT NULL,
+  `Age_Group_Id` int DEFAULT NULL,
+  `Country` varchar(45) DEFAULT NULL,
+  `Highest_Education` int DEFAULT NULL,
+  PRIMARY KEY (`Participant_Id`),
+  KEY `fk_age_group_idx` (`Age_Group_Id`),
+  KEY `fk_degree_idx` (`Highest_Education`),
+  CONSTRAINT `fk_age_group` FOREIGN KEY (`Age_Group_Id`) REFERENCES `age_group` (`age_group_id`),
+  CONSTRAINT `fk_degree` FOREIGN KEY (`Highest_Education`) REFERENCES `education_degree` (`Degree_Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+CREATE TABLE `participant_job` (
+  `pt_job_id` int NOT NULL,
+  `under_graduate_major` varchar(45) DEFAULT NULL,
+  `job_title` varchar(45) DEFAULT NULL,
+  `industry` varchar(45) DEFAULT NULL,
+  `compensation` varchar(45) DEFAULT NULL,
+  `job_role_desc` varchar(100) DEFAULT NULL,
+  KEY `fk_participant_id_idx` (`pt_job_id`),
+  CONSTRAINT `fk_participant_id` FOREIGN KEY (`pt_job_id`) REFERENCES `participant_info` (`Participant_Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+CREATE TABLE `participant_job_actiivity` (
+  `paticipant_id` int NOT NULL,
+  `activity_description` varchar(100) DEFAULT NULL,
+  KEY `fk_participant_id_idx` (`paticipant_id`),
+  CONSTRAINT `fk_participant_job_activity_id` FOREIGN KEY (`paticipant_id`) REFERENCES `participant_info` (`Participant_Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+CREATE TABLE `participant_software_used` (
+  `participant_id` int DEFAULT NULL,
+  `software_id` int DEFAULT NULL,
+  `num_years_used` int DEFAULT NULL,
+  `regular_basis_use` int DEFAULT NULL,
+  `proficiency_level` varchar(45) DEFAULT NULL,
+  KEY `fk_pt_software_used_idx` (`participant_id`),
+  KEY `fk_software_idx` (`software_id`),
+  CONSTRAINT `fk_pt_software_used` FOREIGN KEY (`participant_id`) REFERENCES `participant_info` (`Participant_Id`),
+  CONSTRAINT `fk_software` FOREIGN KEY (`software_id`) REFERENCES `software` (`software_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+
+CREATE TABLE `software` (
+  `software_id` int NOT NULL,
+  `software_type` int DEFAULT NULL,
+  `software_name` varchar(45) DEFAULT NULL COMMENT 'software can include things like tools/IDE/Notebooks etc.',
+  PRIMARY KEY (`software_id`),
+  KEY `fk_software_type_idx` (`software_type`),
+  CONSTRAINT `fk_software_type` FOREIGN KEY (`software_type`) REFERENCES `software_type` (`software_type_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+CREATE TABLE `software_type` (
+  `software_type_id` int NOT NULL,
+  `software_type_name` varchar(45) DEFAULT NULL COMMENT 'Examples of Software types are  tools, IDE, Notebook etc...',
+  PRIMARY KEY (`software_type_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
