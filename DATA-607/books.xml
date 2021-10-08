@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<books>
+	<book>
+		<id>1</id>
+		<title>Digital Transformation</title>
+		<authors>
+		    <author>Thomas Siebel</author>
+		</authors>
+		<attributes>
+		    <attribute>
+		        The combination of four disruptive technologies: cloud computing, big data, the internet of things, and artificial intelligence is dramatically changing the way businesses compete.
+		    </attribute>
+		    <attribute>
+		        The competitive landscape for governments is also changing. 
+		    </attribute>
+		</attributes>
+	</book>
+	<book>
+		<id>2</id>
+		<title>Computer Networks and Internet</title>
+		<authors>
+		    <author>Douglas E. Comer</author>
+		</authors>
+		<attributes>
+		    <attribute>
+		        Refresher in key concepts of computer networking and data communication.
+		    </attribute>
+		    <attribute>
+		        Great for cramming for a job interview or an exam. 
+		    </attribute>
+		</attributes>
+	</book>
+	<book>
+		<id>3</id>
+		<title>Ace The Data Science Interview</title>
+		<authors>
+		    <author>Kevin Huo</author>
+		    <author>Nick Singh</author>
+		</authors>
+		<attributes>
+		    <attribute>
+		        Covers the underlying math useful for data science.
+		    </attribute>
+		    <attribute>
+		        Amazing tips on portfolio projects.
+		    </attribute>
+		</attributes>
+	</book>
+</books>
