@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <books>
 	<book>		
-		<title>Digital Transformation</title>
-		<authors>
+		<Title>Digital Transformation</Title>
+		<Authors>
 		    <author>Thomas M. Siebel</author>
-		</authors>
+		</Authors>
 		<ISBN>978-1-948122</ISBN>
 		<Publisher>Rosetta Books</Publisher>
 		
 	</book>
 	<book>		
-		<title>The Unix Programming Environment</title>
-		<authors>
+		<Title>The Unix Programming Environment</Title>
+		<Authors>
 		    <author>Brian W. Kernighan</author>
 		    <author>Rob Pike</author>
-		</authors>
+		</Authors>
 		<ISBN>0-13-937681-X</ISBN>
 		<Publisher>Prentice Hall</Publisher>		
 	</book>
 	<book>
-		<title>Design Patterns</title>
-		<authors>
+		<Title>Design Patterns</Title>
+		<Authors>
 		    <author>Eric Gamma</author>
 		    <author>Richard Helm</author>
 		    <author>Ralph Johnson</author>
 		    <author>John Vlissides</author>		    
-		</authors>
+		</Authors>
 		<ISBN>0-201-63361-2</ISBN>
 		<Publisher>Addison-Wesley</Publisher>
 	</book>
