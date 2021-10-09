@@ -6,14 +6,14 @@
 		    <author>Thomas M. Siebel</author>
 		</Authors>
 		<ISBN>978-1-948122</ISBN>
-		<Publisher> Rosetta Books</Publisher>
-		 
+		<Publisher>Rosetta Books</Publisher>
+		
 	</book>
 	<book>		
 		<Title>The Unix Programming Environment</Title>
 		<Authors>
-		    <author> Brian W. Kernighan</author>
-		    <author> Rob Pike</author>
+		    <author>Brian W. Kernighan</author>
+		    <author>Rob Pike</author>
 		</Authors>
 		<ISBN>0-13-937681-X</ISBN>
 		<Publisher>Prentice Hall</Publisher>		
@@ -21,10 +21,10 @@
 	<book>
 		<Title>Design Patterns</Title>
 		<Authors>
-		    <author> Eric Gamma</author>
-		    <author> Richard Helm</author>
-		    <author> Ralph Johnson</author>
-		    <author> John Vlissides</author>		    
+		    <author>Eric Gamma</author>
+		    <author>Richard Helm</author>
+		    <author>Ralph Johnson</author>
+		    <author>John Vlissides</author>		    
 		</Authors>
 		<ISBN>0-201-63361-2</ISBN>
 		<Publisher>Addison-Wesley</Publisher>
