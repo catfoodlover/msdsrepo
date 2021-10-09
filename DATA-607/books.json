@@ -9,13 +9,13 @@
       },
       {
         "Title": "The Unix Programming Environment",
-	"Authors": ["Brian W. Kernighan", "Rob Pike"],
+	"Authors": ["Brian W. Kernighan","Rob Pike"],
 	"ISBN": "0-13-937681-X",
         "Publisher": "Prentice Hall"
       },
       {
         "Title": "Design Patterns",
-	"Authors": ["Eric Gamma", "Richard Helm", "Ralph Johnson", "John Vlissides"],
+	"Authors": ["Eric Gamma","Richard Helm","Ralph Johnson","John Vlissides"],
 	"ISBN": "0-201-63361-2",
         "Publisher": "Addison-Wesley"       
       }
