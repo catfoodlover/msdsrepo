@@ -1,0 +1,398 @@
+---
+title: "DATA_606 Final Presentation"
+author: "Bikram Barua"
+date: "12/7/2021"
+output:
+  slidy_presentation: default
+  ioslides_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+## Abstract
+
+From high tides to crazy moods, the full moon is believed to cause a number of things. As the full moon approaches, full-term pregnant womean everywhere prepare hopefully to go into labor. Is this an old wives tales or something mysterious that we hear plenty about, but don't yet understand?
+
+There is no evidence to such a phenomenon. This study is based to look into the birth data in US and attempt to link them with to full moons to see if there is any correlation. We will first try to identify some good data sources for the study. Based on the data, it will be filtered, formatted and grouped into appropriate categories for the study.
+
+The prepared data will then be processed using statistical methods to reveal the facts around the myth and understand the rationality of the belief which has been around for a very, very long time. Many cultures around the world hold strong beliefs in this link and the folklore tends to stretch back forever.
+
+
+## Introduction
+
+### Myth or Fact: Do more Women Go into labor During a Full Moon ?  
+Compare the birth counts on regular days with the full moon days.    
+Do you see any difference? Can we draw any inference based on the data?  
+
+Null Hypothesis: There is no effect of Full Moon with Women going into Labor and child being born.
+
+Alternate Hypothesis: Women go into Labor due to Full Moon, there are
+more births on full moon nights.  
+
+Below is the reference to an article on this topic:  
+_Ref: https://www.dukehealth.org/blog/myth-or-fact-more-women-go-labor-during-full-moon_
+
+US births from 2000-2014, data source:  [fivethirtyeight.com](https://github.com/fivethirtyeight/data/blob/master/births/US_births_2000-2014_SSA.csv)
+
+Time series of full moon occurrences, data source: [Kaggle](https://www.kaggle.com/lsind18/full-moon-calendar-1900-2050).
+
+
+
+## US Birth Data
+
+```{r load-packages, message=FALSE, warning=FALSE, echo=FALSE}
+library(dplyr)
+library(downloader)
+library(stringr)
+library(tidyverse)
+library(DT)
+library(kableExtra)
+library(ggplot2)
+
+# Load raw data
+
+# Import the data from the csv file
+birth_data <- read.csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/births/US_births_2000-2014_SSA.csv", stringsAsFactors = FALSE)
+
+head(birth_data,20) %>%
+  kbl() %>%
+  kable_styling(fixed_thead=T)
+
+```
+
+
+## Full Moon Days
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+
+full_moon_data <- read.csv("https://raw.githubusercontent.com/baruab/msdsrepo/main/DATA-606/full_moon.csv", stringsAsFactors = FALSE)
+
+### Remove unwanted columns
+subset_full_moon_data <- full_moon_data %>% select(-'Time')
+#print(knitr::kable(head(subset_full_moon_data)))
+
+head(subset_full_moon_data, 20) %>%
+  kbl() %>%
+ kable_styling(fixed_thead=T)
+
+```
+
+
+
+
+## Format Full Moon Data
+
+### Split Date description into Date, Month and Year
+```{r echo=FALSE}
+ 
+temp_split <-str_split_fixed(subset_full_moon_data$Date, " ", 4) 
+
+bind_full_moon_df <- cbind(subset_full_moon_data, temp_split) 
+ 
+full_moon_df <- bind_full_moon_df   %>% select(-'1')
+
+names(full_moon_df) <- c('FM_Day', 'FM_Full_Date', 'FM_Date', 'FM_Month', 'FM_Year')
+
+
+months <- c("January" = "1",
+           "February"= "2",
+           "March"= "3",
+           "April" = "4",
+           "May" = "5",
+           "June" = "6",
+           "July" = "7",
+           "August" = "8",
+           "September" = "9",
+           "October" = "10",
+           "November" = "11",
+           "December" = "12")
+full_moon_df$FM_Month <- months[full_moon_df$FM_Month]
+
+full_moon_df$FM_Date <- as.integer(full_moon_df$FM_Date)
+full_moon_df$FM_Month <- as.integer(full_moon_df$FM_Month)
+full_moon_df$FM_Year <- as.integer(full_moon_df$FM_Year)
+
+
+head(full_moon_df,15)%>%
+  kbl() %>%
+  kable_styling(fixed_thead=T)
+
+```
+
+
+
+## Highest Birth Count By Year (Top 6)
+
+### Group By Year, Sum and Sort
+```{r echo=FALSE, warning=FALSE}
+
+sorted_by_year <- birth_data %>%
+  group_by(year) %>%
+  summarise(sum = sum(births)) %>%
+  arrange(desc(sum))
+
+
+
+head(sorted_by_year)%>%
+  kbl() %>%
+  kable_styling()
+
+```
+
+
+## 2007 birth count by month
+```{r message=FALSE, echo=FALSE}
+
+birth_data_2007 <- filter(birth_data, year==2007)
+
+group_by_month_2007 <- birth_data_2007 %>%
+     group_by(month) %>%
+     summarise(mean = mean(births))
+
+total_mean_birth_2007 <-  sum(group_by_month_2007[, 'mean'])
+group_by_month_2007 %>%
+  kbl() %>%
+  kable_styling(fixed_thead=T)
+
+paste0("Total Births(mean) in 2007 is ", format(round(total_mean_birth_2007, 2), nsmall = 2) )
+
+paste0("Mean Birth per day in 2007 is ", format(round(total_mean_birth_2007/12, 2), nsmall = 2) )
+
+
+```
+
+
+
+## Full Moon Births in 2007
+
+```{r message=FALSE, echo=FALSE}
+
+full_moon_2007 <- filter(full_moon_df, FM_Year==2007)
+
+full_moon_merge_data_2007 <- dplyr::inner_join(birth_data_2007, full_moon_2007, by=c("year" = "FM_Year", "month" = "FM_Month", "date_of_month" = "FM_Date"))
+
+full_moon_merge_data_2007 %>%
+  kbl() %>%
+  kable_styling(fixed_thead=T)
+
+full_moon_total_birth_2007 <-  sum(full_moon_merge_data_2007[, 'births'])
+
+paste0("Mean Birth per full moon day in 2007 is ", format(round(full_moon_total_birth_2007/12, 2), nsmall = 2) )
+
+
+
+```
+
+
+## Merge and Compare the births counts (Regular vs Full Moon)
+
+### One of the most common statistical tasks is to compare an outcome between two groups.
+```{r echo=FALSE}
+merge_by_month_data_2007 <- dplyr::inner_join(group_by_month_2007, full_moon_merge_data_2007,by=c("month" = "month"))
+
+
+merge_by_month_data_2007 %>%
+   kbl() %>%
+   kable_styling(fixed_thead=T)
+```
+
+## Plot 2007 regular births and full moon births
+
+```{r echo=FALSE}
+ggplot(group_by_month_2007, aes(x = month, y=mean )) + geom_line() + ylim(7000, 15000)
+   
+ ggplot(full_moon_merge_data_2007, aes(x = month, y=births )) +  geom_line() + ylim(7000, 15000)
+ 
+
+```
+
+
+
+## T-Test Analysis
+
+```{r, echo=TRUE}
+birth.t.test <- t.test(merge_by_month_data_2007$mean, merge_by_month_data_2007$births, data = merge_by_month_data_2007)
+birth.t.test
+
+# p-value
+birth.t.test$p.value
+
+# confidence interval
+birth.t.test$conf.int
+
+```
+
+### High p-values indicate that the evidence is not strong enough to suggest an effect exists. It's possible that the sample size is too small for the hypothesis test to detect it.
+
+### Lets try to increase the sample size and run the analysis again.
+
+## Birth data sample(2000 - 2013)
+
+### Birth count by month
+```{r message=FALSE, echo=FALSE}
+
+birth_data_bigset <- filter(birth_data, year %in% c(2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013))
+
+group_by_month_bigset <- birth_data_bigset %>%
+     group_by(year, month) %>%
+     summarise(mean = mean(births))
+
+total_mean_birth_bigset <-  sum(group_by_month_bigset[, 'mean'])
+
+head(group_by_month_bigset) %>%   kbl() %>% kable_styling(fixed_thead=T)
+
+paste0("Sum of Births(mean) in 2000-2013 is ", format(round(total_mean_birth_bigset, 2), nsmall = 2) )
+
+paste0("Mean Birth per day in 2000-2013 is ", format(round(total_mean_birth_bigset/168, 2), nsmall = 2) )
+
+
+```
+
+
+
+## Full Moon Births (2000-2013)
+
+```{r message=FALSE, echo=FALSE}
+
+full_moon_bigset <-  filter(full_moon_df, FM_Year %in% c(2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013))
+
+full_moon_merge_data_bigset <- dplyr::inner_join(birth_data_bigset, full_moon_bigset, by=c("year" = "FM_Year", "month" = "FM_Month", "date_of_month" = "FM_Date"))
+
+head(full_moon_merge_data_bigset, 15) %>%
+  kbl() %>%
+   kable_styling(fixed_thead=T)
+
+full_moon_total_birth_bigset <-  sum(full_moon_merge_data_bigset[, 'births'])
+
+paste0("Mean Birth per full moon day in 2000-2013 is ", format(round(full_moon_total_birth_bigset/168, 2), nsmall = 2) )
+
+
+
+```
+
+
+
+## Merge and Compare data
+
+### One of the most common statistical tasks is to compare an outcome between two groups.
+```{r echo=FALSE}
+
+merge_by_monthyear_data_bigset <- dplyr::inner_join(group_by_month_bigset, full_moon_merge_data_bigset,by=c("month"="month", "year"="year"))
+
+
+merge_by_monthyear_data_bigset %>%
+  kbl() %>%
+  kable_styling(fixed_thead=T)
+
+
+# ggplot(group_by_month_bigset, aes(x = month, y=mean )) + geom_line() + ylim(7000, 15000)
+   
+# ggplot(full_moon_merge_data_bigset, aes(x = month, y=births )) +  geom_line() + ylim(7000, 15000)
+ 
+
+```
+
+
+
+## T-Test Analysis
+
+```{r, echo=FALSE}
+birth.2t.test <- t.test(merge_by_monthyear_data_bigset$mean, merge_by_monthyear_data_bigset$births, data = merge_by_month_data_2007)
+birth.2t.test
+```
+
+
+## T-Test Results
+
+```{r, echo=TRUE}
+# p-value
+birth.2t.test$p.value
+
+# confidence interval
+birth.2t.test$conf.int
+
+```
+
+### Based on the T-Test the  p-value is 0.729, which is a large value indicating weak evidence against the null hypothesis, so fail to reject it.
+
+
+## Data Visualization
+
+### Histogram of the average births
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+qplot(group_by_month_bigset$mean, geom="histogram", xlab="US Average Birth",  xlim=c(10000, 12000), bins='30' )
+```
+
+
+## Data Visualization
+
+### Histogram of the full moon births
+```{r echo=FALSE}
+qplot(full_moon_merge_data_bigset$births, geom="histogram", xlab="Full Moon Births",  xlim=c(10000, 12000), bins='30' )
+```
+
+
+
+
+
+## Scatterplot of average births by month
+
+```{r}
+
+plot(group_by_month_bigset$month, group_by_month_bigset$mean,  main="Any day birth/Month",
+   xlab="Month ", ylab= "Average Birth Count",  pch=19) 
+
+```
+
+
+
+## Scatterplot of Full Moon births by month
+
+```{r}
+
+plot(full_moon_merge_data_bigset$month, full_moon_merge_data_bigset$births,  main="Full Moon births",
+   xlab="Month ", ylab= "Birth Count",  pch=19) 
+
+```
+
+
+
+## Scatterplot the births on any day of the week
+
+```{r}
+
+plot(merge_by_monthyear_data_bigset$day_of_week, merge_by_monthyear_data_bigset$mean,  main="Births in days of week",
+   xlab="Day of Week ", ylab= "Average Birth Count",  pch=19) 
+
+```
+
+## Scatterplot the full moon births by day of the week
+
+```{r}
+
+plot(full_moon_merge_data_bigset$day_of_week, full_moon_merge_data_bigset$births,  main="Full Moon Birth/Day Of Week",
+   xlab="Day of Week ", ylab= "Average Full Moon Birth Count",  pch=19) 
+
+```
+
+
+
+## Conclusion
+
+Based on the statistical analysis, there is no conclusive evidence to prove that there is an effect of Full Moon with more number of birth occurrences. Therefore, the Null Hypothesis holds true and the Alternate Hypothesis is rejected based on the above calculations.
+
+The average birth count in both catergories is between 11000 and 12000.
+Although, looking at the Scatterplot of Full Moon births by month, we can see the high variance of birth counts from the mean. The birth counts range from 7000 to 15000 with concentration of counts on both end of the spectrum. This leads to believe that on Full Moon nights depending on some other 'unknown' variables, it can stimulate or defer women going into labor.
+
+This can be looked into and studied further by using other statistical methods and/or adding other variables for analysis of this cultural myth, hoping to reveal the facts and understand its nature.
+
+
+
+## Questions & Answers
+
+
